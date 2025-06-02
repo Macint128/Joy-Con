@@ -1,1 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>iPhone Joy-Con</title>
+  <style>
+    body { background: #111; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .button { width: 80px; height: 80px; border-radius: 50%; background: #333; color: white; font-size: 24px; display: flex; align-items: center; justify-content: center; margin: 10px; }
+    .btn-grid { display: flex; flex-wrap: wrap; width: 200px; justify-content: center; }
+  </style>
+</head>
+<body>
+  <h1>Joy-Con 🎮</h1>
+  <div class="btn-grid">
+    <div class="button" onclick="sendButton('A')">A</div>
+    <div class="button" onclick="sendButton('B')">B</div>
+    <div class="button" onclick="sendButton('X')">X</div>
+    <div class="button" onclick="sendButton('Y')">Y</div>
+  </div>
 
+  <script>
+    const socket = new WebSocket('ws://YOUR_PC_IP:3000');
+
+    socket.onopen = () => console.log('WebSocket 연결됨!');
+    socket.onerror = (err) => console.error('WebSocket 에러:', err);
+
+    function sendButton(btn) {
+      socket.send(JSON.stringify({ type: 'button', button: btn }));
+    }
+
+    window.addEventListener('deviceorientation', (e) => {
+      const data = {
+        type: 'gyro',
+        alpha: e.alpha,
+        beta: e.beta,
+        gamma: e.gamma
+      };
+      socket.send(JSON.stringify(data));
+    });
+  </script>
+</body>
+</html>
