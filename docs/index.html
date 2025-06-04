@@ -1,43 +1,106 @@
+<!-- controller.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iPhone Joy-Con</title>
+  <meta charset="UTF-8">
+  <title>조이폰 컨트롤러</title>
   <style>
-    body { background: #111; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .button { width: 80px; height: 80px; border-radius: 50%; background: #333; color: white; font-size: 24px; display: flex; align-items: center; justify-content: center; margin: 10px; }
-    .btn-grid { display: flex; flex-wrap: wrap; width: 200px; justify-content: center; }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    button {
+      font-size: 20px;
+      margin: 10px;
+      padding: 20px 30px;
+      border-radius: 12px;
+      border: none;
+      background-color: #333;
+      color: white;
+    }
+    .row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
-  <h1>Joy-Con 🎮</h1>
-  <div class="btn-grid">
-    <div class="button" onclick="sendButton('A')">A</div>
-    <div class="button" onclick="sendButton('B')">B</div>
-    <div class="button" onclick="sendButton('X')">X</div>
-    <div class="button" onclick="sendButton('Y')">Y</div>
+  <h1>🎮 조이폰 컨트롤러</h1>
+
+  <div class="row">
+    <button onclick="send('zl')">ZL</button>
+    <button onclick="send('l')">L</button>
+    <button onclick="send('zr')">ZR</button>
+    <button onclick="send('r')">R</button>
   </div>
 
+  <div class="row">
+    <button onclick="send('x')">X</button>
+    <button onclick="send('y')">Y</button>
+    <button onclick="send('a')">A</button>
+    <button onclick="send('b')">B</button>
+  </div>
+
+  <div class="row">
+    <button onclick="send('up')">↑</button>
+    <button onclick="send('down')">↓</button>
+    <button onclick="send('left')">←</button>
+    <button onclick="send('right')">→</button>
+  </div>
+
+  <div class="row">
+    <button onclick="send('l_click')">L 클릭</button>
+    <button onclick="send('r_click')">R 클릭</button>
+  </div>
+
+  <p>자이로 움직이면 R스틱 좌/우 입력됨 (실험용)</p>
+
   <script>
-    const socket = new WebSocket('ws://YOUR_PC_IP:3000');
+    async function connectToServer() {
+      try {
+        const res = await fetch("http://localhost:5000/ip");
+        const data = await res.json();
+        const ip = data.ip;
+        console.log("💡 감지된 IP:", ip);
 
-    socket.onopen = () => console.log('WebSocket 연결됨!');
-    socket.onerror = (err) => console.error('WebSocket 에러:', err);
+        const ws = new WebSocket("ws://" + ip + ":8080");
 
-    function sendButton(btn) {
-      socket.send(JSON.stringify({ type: 'button', button: btn }));
+        ws.onopen = () => {
+          console.log("✅ 연결 성공!");
+          window.ws = ws;
+        };
+
+        ws.onerror = () => alert("❌ 연결 실패! PC에서 server.py 실행됐는지 확인!");
+
+      } catch (err) {
+        console.error("⚠️ IP 가져오기 실패", err);
+        alert("서버에서 IP 못 가져왔어. PC에서 Python 서버 켰는지 확인해줘!");
+      }
     }
 
-    window.addEventListener('deviceorientation', (e) => {
-      const data = {
-        type: 'gyro',
-        alpha: e.alpha,
-        beta: e.beta,
-        gamma: e.gamma
+    function send(action) {
+      if (!window.ws) return;
+      const msg = {
+        type: "button",
+        action: action
       };
-      socket.send(JSON.stringify(data));
+      window.ws.send(JSON.stringify(msg));
+    }
+
+    window.addEventListener("deviceorientation", (event) => {
+      if (!window.ws) return;
+      const msg = {
+        type: "gyro",
+        gamma: event.gamma
+      };
+      window.ws.send(JSON.stringify(msg));
     });
+
+    window.onload = connectToServer;
   </script>
 </body>
 </html>
